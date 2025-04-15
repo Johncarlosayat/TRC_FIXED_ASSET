@@ -5,7 +5,7 @@ Public Class Form1
     Dim secno As Integer
     Public qrcode As String
     Public dataid As Integer = 0
-
+    Dim sectionCode As String
     Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         LoadData()
         LoadData1()
@@ -199,15 +199,15 @@ Public Class Form1
             Dim cmdSelect As New MySqlCommand("SELECT COUNT(id)  FROM tblfixedasset", con)
             cmdSelect.Parameters.AddWithValue("@section", cb_section.Text)
 
-                ' Execute the command and read the data
-                Dim dr As MySqlDataReader = cmdSelect.ExecuteReader()
+            ' Execute the command and read the data
+            Dim dr As MySqlDataReader = cmdSelect.ExecuteReader()
 
-                If dr.Read() Then
-                    txt_no.Text = dr.GetInt32(0) + 1
+            If dr.Read() Then
+                txt_no.Text = dr.GetInt32(0) + 1
 
-                Else
+            Else
 
-                End If
+            End If
 
         Catch ex As Exception
             MessageBox.Show("Error loading data: " & ex.Message)
@@ -352,7 +352,26 @@ Public Class Form1
     End Sub
 
     Private Sub cb_section_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cb_section.SelectedIndexChanged
-
+        Select Case cb_section.Text
+            Case "Assembly"
+                sectionCode = "AS"
+            Case "Painting"
+                sectionCode = "PT"
+            Case "Molding"
+                sectionCode = "MO"
+            Case "Motor Assy"
+                sectionCode = "MR"
+            Case "Rubber"
+                sectionCode = "RB"
+            Case "Tubepump"
+                sectionCode = "TP"
+            Case "Shaft"
+                sectionCode = "SH"
+            Case "Retainer Assy"
+                sectionCode = "RA"
+            Case "General"
+                sectionCode = "GA"
+        End Select
 
     End Sub
 
@@ -559,7 +578,7 @@ Public Class Form1
             '  txt_fano.Text = sechar & "-" & dt_date.Value.ToString("yyyy") & "-" & secno.ToString("00000")
 
 
-            txt_fano.Text = getFAno(dt_date.Value.ToString("yyyy"), cb_section.Text.Split(":"c)(0).Trim)
+            txt_fano.Text = getFAno(dt_date.Value.ToString("yyyy"), sectionCode)
 
             '' Close the reader before updating the database
             'dr.Close()
