@@ -6,7 +6,7 @@ Public Class Form1
     Public qrcode As String
     Public dataid As Integer = 0
     Dim sectionCode As String
-
+    Dim serialcode As Integer
     Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         LoadData()
         LoadData1()
@@ -19,7 +19,7 @@ Public Class Form1
         btn_delete.Enabled = False
         btn_access.Enabled = False
         dt_date.Value = Date.Now
-
+        dt_date.Enabled = True
     End Sub
 
 
@@ -31,20 +31,14 @@ Public Class Form1
 
             OpenConnection()
             cmd.Connection = con
-            cmd.CommandText = "INSERT INTO tblfixedasset (FULLNAME, FANO,SERIAL, FATYPE, SECTION, ITEMDES, DATE, PONO, INVOICE, SINO, AMOUNT,CURRENCY, SUPPLIER, STATUS, REMARK, QRCODE) 
-                                VALUES (@fullname, @fano, @fanotype, 
-(
-        SELECT LPAD(IFNULL(COUNT(id), 0) + 1, 5, '0')
-        FROM tblfixedasset
-        WHERE YEAR(date) = @year
-        AND LEFT(`FANO`, LOCATE('-', `FANO`) - 1) = '" & sectionCode & "'
-    ), @section, @itemdes, @date, @pono, @invoice, @sino, @amount,@currency, @supplier, @status, @remark, @qrcode)"
+            cmd.CommandText = "INSERT INTO tblfixedasset (FULLNAME, FANO, FATYPE, serial, SECTION, ITEMDES, DATE, PONO, INVOICE, SINO, AMOUNT,CURRENCY, SUPPLIER, STATUS, REMARK, QRCODE) 
+                                VALUES (@fullname, @fano, @fanotype, @SERIAL, @section, @itemdes, @date, @pono, @invoice, @sino, @amount,@currency, @supplier, @status, @remark, @qrcode)"
             cmd.Parameters.Clear()
             cmd.Parameters.AddWithValue("@fullname", txt_user.Text)
 
             cmd.Parameters.AddWithValue("@fano", txt_fano.Text)
             cmd.Parameters.AddWithValue("@fanotype", cb_fatype.Text)
-
+            cmd.Parameters.AddWithValue("@SERIAL", serialcode)
             cmd.Parameters.AddWithValue("@section", cb_section.Text)
             cmd.Parameters.AddWithValue("@itemdes", txt_itemdes.Text)
             cmd.Parameters.AddWithValue("@date", dt_date.Value.ToString("yyyy-MM-dd"))
@@ -73,6 +67,7 @@ Public Class Form1
             txt_fano.Text = String.Empty
             ClearInputFields()
             LoadData()
+
 
         Catch ex As Exception
             MessageBox.Show("Error adding record: " & ex.Message)
@@ -146,6 +141,7 @@ Public Class Form1
             btn_save.Enabled = True
             btn_delete.Enabled = False
             btn_edit.Enabled = False
+            dt_date.Enabled = True
         Catch ex As Exception
             MessageBox.Show("Error adding record: " & ex.Message)
         Finally
@@ -297,6 +293,7 @@ Public Class Form1
         btn_save.Enabled = True
         btn_delete.Enabled = False
         btn_access.Enabled = False
+        dt_date.Enabled = True
     End Sub
 
 
@@ -464,6 +461,7 @@ Public Class Form1
             btn_save.Enabled = False
             btn_delete.Enabled = True
             btn_access.Enabled = True
+            dt_date.Enabled = False
             Dim row As DataGridViewRow = datagrid1.Rows(e.RowIndex)
             'txt_user.Text = row.Cells("FULLNAME").Value.ToString()
 
@@ -637,13 +635,47 @@ Public Class Form1
 
 
     Private Function getFAno(ayear As String, sectioncode As String) As String
+        'Try
+        '    con.Close()
+        '    con.Open()
+
+
+        '    Dim query As String = "SELECT CONCAT(@sectioncode, '-', @ayear, '-', LPAD(IFNULL(MAX(serial), 0) + 1, 5, '0')) AS ID, LPAD(IFNULL(MAX(serial), 0) + 1) AS serial " &
+        '              "FROM tblfixedasset WHERE YEAR(date) = @year AND LEFT(`FANO`, LOCATE('-', `FANO`) - 1) = @sectioncode;"
+
+
+        '    Using cmd As New MySqlCommand(query, con)
+        '        cmd.Parameters.AddWithValue("@sectioncode", sectioncode)
+        '        cmd.Parameters.AddWithValue("@ayear", ayear)
+        '        cmd.Parameters.AddWithValue("@year", ayear)
+
+        '        dr = cmd.ExecuteReader()
+        '        If dr.Read() Then
+
+        '            serialcode = dr(1)
+
+
+
+        '            Return dr("ID").ToString()
+        '        End If
+        '    End Using
+        'Catch ex As Exception
+        '    MessageBox.Show("Error: " & ex.Message)
+        'Finally
+        '    con.Close()
+        'End Try
+
+        'Return ""
         Try
             con.Close()
             con.Open()
 
-
-            Dim query As String = "SELECT CONCAT(@sectioncode, '-', @ayear, '-', LPAD(IFNULL(MAX(id), 0) + 1, 5, '0')) AS ID " &
-                      "FROM tblfixedasset WHERE YEAR(date) = @year AND LEFT(`FANO`, LOCATE('-', `FANO`) - 1) = @sectioncode;"
+            Dim query As String = "SELECT 
+  CONCAT(@sectioncode, '-', @ayear, '-', LPAD(IFNULL(MAX(serial), 0) + 1, 5, '0')) AS ID,
+  (IFNULL(MAX(serial), 0) + 1) AS serial
+From tblfixedasset
+Where Year(`date`) = @year 
+  And LEFT(`FANO`, LOCATE('-', `FANO`) - 1) = @sectioncode;"
 
 
             Using cmd As New MySqlCommand(query, con)
@@ -653,9 +685,12 @@ Public Class Form1
 
                 dr = cmd.ExecuteReader()
                 If dr.Read() Then
+                    serialcode = dr.GetInt32("serial")
+                    ' MessageBox.Show(serialcode)
                     Return dr("ID").ToString()
                 End If
             End Using
+
         Catch ex As Exception
             MessageBox.Show("Error: " & ex.Message)
         Finally
@@ -698,6 +733,7 @@ Public Class Form1
         btn_save.Enabled = True
         btn_delete.Enabled = False
         btn_access.Enabled = False
+        dt_date.Enabled = True
     End Sub
 
     'Private Sub btn_delete_Click(sender As Object, e As EventArgs) Handles btn_delete.Click
@@ -761,6 +797,7 @@ Public Class Form1
                     btn_save.Enabled = True
                     btn_delete.Enabled = False
                     btn_access.Enabled = False
+                    dt_date.Enabled = True
                 Catch ex As Exception
                     MessageBox.Show("Error while deleting: " & ex.Message)
                 Finally
