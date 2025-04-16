@@ -51,7 +51,7 @@ Partial Class delete_confirm
         Me.btn_ok.Name = "btn_ok"
         Me.btn_ok.Size = New System.Drawing.Size(78, 37)
         Me.btn_ok.TabIndex = 10
-        Me.btn_ok.Text = "Ok"
+        Me.btn_ok.Text = "Confirm"
         '
         'txt_confirmID
         '
