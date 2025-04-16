@@ -372,6 +372,8 @@ Public Class Form1
                 sectionCode = "RA"
             Case "General"
                 sectionCode = "GA"
+            Case "Office"
+                sectionCode = "OF"
         End Select
 
     End Sub
