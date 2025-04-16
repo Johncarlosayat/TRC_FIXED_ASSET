@@ -6,6 +6,7 @@ Public Class Form1
     Public qrcode As String
     Public dataid As Integer = 0
     Dim sectionCode As String
+
     Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         LoadData()
         LoadData1()
@@ -15,7 +16,7 @@ Public Class Form1
         DisableInputFields()
         cb_status.Text = "Active"
         btn_edit.Enabled = False
-
+        dt_date.Value = Date.Now
 
     End Sub
 
@@ -35,7 +36,7 @@ Public Class Form1
             cmd.Parameters.AddWithValue("@no", txt_no.Text)
             cmd.Parameters.AddWithValue("@fano", txt_fano.Text)
             cmd.Parameters.AddWithValue("@fanotype", cb_fatype.Text)
-            cmd.Parameters.AddWithValue("@section", cb_section.Text.Split(":"c)(1).Trim)
+            cmd.Parameters.AddWithValue("@section", cb_section.Text)
             cmd.Parameters.AddWithValue("@itemdes", txt_itemdes.Text)
             cmd.Parameters.AddWithValue("@date", dt_date.Value.ToString("yyyy-MM-dd"))
             cmd.Parameters.AddWithValue("@pono", txt_pono.Text)
@@ -237,7 +238,7 @@ Public Class Form1
                 cmd.Parameters.AddWithValue("@no", txt_no.Text)
 
                 cmd.Parameters.AddWithValue("@fanotype", cb_fatype.Text)
-                cmd.Parameters.AddWithValue("@section", cb_section.Text.Split(":"c)(1).Trim)
+                cmd.Parameters.AddWithValue("@section", cb_section.Text)
                 cmd.Parameters.AddWithValue("@itemdes", txt_itemdes.Text)
                 cmd.Parameters.AddWithValue("@date", dt_date.Value.ToString("yyyy-MM-dd"))
 
