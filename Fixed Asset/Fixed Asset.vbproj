@@ -26,7 +26,7 @@
     <UpdateRequired>false</UpdateRequired>
     <MapFileExtensions>true</MapFileExtensions>
     <UpdateUrl>\\ptif1-ds\SystemServer\TRCfixedasset\</UpdateUrl>
-    <ApplicationRevision>16</ApplicationRevision>
+    <ApplicationRevision>17</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <CreateDesktopShortcut>true</CreateDesktopShortcut>
@@ -209,6 +209,12 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>DataSet1.xsd</DependentUpon>
     </Compile>
+    <Compile Include="delete_confirm.Designer.vb">
+      <DependentUpon>delete_confirm.vb</DependentUpon>
+    </Compile>
+    <Compile Include="delete_confirm.vb">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="FIXED ASSET GENERATE.Designer.vb">
       <DependentUpon>FIXED ASSET GENERATE.vb</DependentUpon>
     </Compile>
@@ -285,6 +291,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="add_type.resx">
       <DependentUpon>add_type.vb</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="delete_confirm.resx">
+      <DependentUpon>delete_confirm.vb</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="FIXED ASSET GENERATE.resx">
       <DependentUpon>FIXED ASSET GENERATE.vb</DependentUpon>

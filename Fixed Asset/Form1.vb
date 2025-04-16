@@ -16,6 +16,8 @@ Public Class Form1
         DisableInputFields()
         cb_status.Text = "Active"
         btn_edit.Enabled = False
+        btn_delete.Enabled = False
+        btn_access.Enabled = False
         dt_date.Value = Date.Now
 
     End Sub
@@ -29,13 +31,20 @@ Public Class Form1
 
             OpenConnection()
             cmd.Connection = con
-            cmd.CommandText = "INSERT INTO tblfixedasset (FULLNAME, NO, FANO, FATYPE, SECTION, ITEMDES, DATE, PONO, INVOICE, SINO, AMOUNT,CURRENCY, SUPPLIER, STATUS, REMARK, QRCODE) 
-                                VALUES (@fullname, @no, @fano, @fanotype, @section, @itemdes, @date, @pono, @invoice, @sino, @amount,@currency, @supplier, @status, @remark, @qrcode)"
+            cmd.CommandText = "INSERT INTO tblfixedasset (FULLNAME, FANO,SERIAL, FATYPE, SECTION, ITEMDES, DATE, PONO, INVOICE, SINO, AMOUNT,CURRENCY, SUPPLIER, STATUS, REMARK, QRCODE) 
+                                VALUES (@fullname, @fano, @fanotype, 
+(
+        SELECT LPAD(IFNULL(COUNT(id), 0) + 1, 5, '0')
+        FROM tblfixedasset
+        WHERE YEAR(date) = @year
+        AND LEFT(`FANO`, LOCATE('-', `FANO`) - 1) = '" & sectionCode & "'
+    ), @section, @itemdes, @date, @pono, @invoice, @sino, @amount,@currency, @supplier, @status, @remark, @qrcode)"
             cmd.Parameters.Clear()
             cmd.Parameters.AddWithValue("@fullname", txt_user.Text)
-            cmd.Parameters.AddWithValue("@no", txt_no.Text)
+
             cmd.Parameters.AddWithValue("@fano", txt_fano.Text)
             cmd.Parameters.AddWithValue("@fanotype", cb_fatype.Text)
+
             cmd.Parameters.AddWithValue("@section", cb_section.Text)
             cmd.Parameters.AddWithValue("@itemdes", txt_itemdes.Text)
             cmd.Parameters.AddWithValue("@date", dt_date.Value.ToString("yyyy-MM-dd"))
@@ -61,7 +70,7 @@ Public Class Form1
             'cmdUpdate.Parameters.AddWithValue("@section", cb_section.Text)
             ' Execute the update command without adding the @section parameter
             'cmdUpdate.ExecuteNonQuery()
-            txt_fano.Clear()
+            txt_fano.Text = String.Empty
             ClearInputFields()
             LoadData()
 
@@ -76,8 +85,7 @@ Public Class Form1
         txt_user.Text = fullname
     End Sub
     Private Function ValidateFields() As Boolean
-        If String.IsNullOrWhiteSpace(txt_no.Text) Or
-           String.IsNullOrWhiteSpace(txt_fano.Text) Or
+        If String.IsNullOrWhiteSpace(txt_fano.Text) Or
            cb_fatype.SelectedIndex = -1 Or
            cb_section.SelectedIndex = -1 Or
            cb_status.SelectedIndex = -1 Or
@@ -95,6 +103,7 @@ Public Class Form1
     End Function
 
     Private Sub btnaddservice_Click(sender As Object, e As EventArgs) Handles btnaddservice.Click
+
         ' Check if access is granted
         If Not accessGranted Then
             MessageBox.Show("Please click the 'Access' button first.")
@@ -125,17 +134,27 @@ Public Class Form1
             cmd.ExecuteNonQuery()
 
             MessageBox.Show("Record added successfully!")
+            txt_fano.Text = String.Empty
+            ClearInputFields()
             ClearInputFields1()
             DisableInputFields()
+            LoadData()
             LoadData1()
+            datagrid1.ClearSelection()
+            datagrid2.ClearSelection()
+            btn_access.Enabled = False
+            btn_save.Enabled = True
+            btn_delete.Enabled = False
+            btn_edit.Enabled = False
         Catch ex As Exception
             MessageBox.Show("Error adding record: " & ex.Message)
         Finally
+
             CloseConnection()
         End Try
     End Sub
     Private Sub ClearInputFields()
-        txt_no.Clear()
+
         txt_fano.Clear()
         cb_fatype.SelectedIndex = -1
         cb_section.SelectedIndex = -1
@@ -156,6 +175,7 @@ Public Class Form1
         txt_amount1.Clear()
         txt_sino1.Clear()
         txtpo.Clear()
+        txtrema.Clear()
     End Sub
     ' This method enables input fields
     Private Sub EnableInputFields()
@@ -164,7 +184,8 @@ Public Class Form1
         txt_amount1.Enabled = True
         txt_sino1.Enabled = True
         dt_accomdate.Enabled = True
-
+        txtpo.Enabled = True
+        txtrema.Enabled = True
     End Sub
 
     ' This method disables input fields
@@ -174,6 +195,8 @@ Public Class Form1
         txt_amount1.Enabled = False
         txt_sino1.Enabled = False
         dt_accomdate.Enabled = False
+        txtpo.Enabled = False
+        txtrema.Enabled = False
 
     End Sub
 
@@ -183,7 +206,9 @@ Public Class Form1
             CloseConnection()
             OpenConnection()
             dt.Clear()
-            Dim query As String = "SELECT * FROM tblfixedasset"
+            Dim query As String = "Select `ID`,ROW_NUMBER() OVER (ORDER BY ID) As NO, `FULLNAME`,  `FANO`, `FATYPE`, `SECTION`, `ITEMDES`, `Date`, `PONO`, `INVOICE`, `SINO`, `AMOUNT`, `CURRENCY`, `SUPPLIER`, `STATUS`, `REMARK`, `QRCODE` FROM `tblfixedasset` "
+
+
             da = New MySqlDataAdapter(query, con)
             da.Fill(dt)
             datagrid1.DataSource = dt
@@ -197,18 +222,18 @@ Public Class Form1
             OpenConnection()
 
             ' Prepare the SQL query to fetch data based on the selected section
-            Dim cmdSelect As New MySqlCommand("SELECT COUNT(id)  FROM tblfixedasset", con)
+            Dim cmdSelect As New MySqlCommand("Select COUNT(id)  FROM tblfixedasset", con)
             cmdSelect.Parameters.AddWithValue("@section", cb_section.Text)
 
             ' Execute the command and read the data
             Dim dr As MySqlDataReader = cmdSelect.ExecuteReader()
 
-            If dr.Read() Then
-                txt_no.Text = dr.GetInt32(0) + 1
+            'If dr.Read() Then
+            '    txt_no.Text = dr.GetInt32(0) + 1
 
-            Else
+            'Else
 
-            End If
+            'End If
 
         Catch ex As Exception
             MessageBox.Show("Error loading data: " & ex.Message)
@@ -231,11 +256,11 @@ Public Class Form1
             con.Close()
             con.Open()
 
-            Using cmd As New MySqlCommand("UPDATE tblfixedasset SET FULLNAME=@fullname, NO=@no, FANO=@fano, FATYPE=@fanotype, SECTION=@section, ITEMDES=@itemdes, DATE=@date, PONO=@pono, INVOICE=@invoice, SINO=@sino, AMOUNT=@amount, CURRENCY=@currency, SUPPLIER=@supplier, STATUS=@status, REMARK=@remark WHERE id=@id", con)
+            Using cmd As New MySqlCommand("UPDATE tblfixedasset SET FULLNAME=@fullname, FANO=@fano, FATYPE=@fanotype, SECTION=@section, ITEMDES=@itemdes, DATE=@date, PONO=@pono, INVOICE=@invoice, SINO=@sino, AMOUNT=@amount, CURRENCY=@currency, SUPPLIER=@supplier, STATUS=@status, REMARK=@remark WHERE id=@id", con)
                 cmd.Parameters.Clear()
                 cmd.Parameters.AddWithValue("@id", id)
                 cmd.Parameters.AddWithValue("@fullname", txt_user.Text)
-                cmd.Parameters.AddWithValue("@no", txt_no.Text)
+
 
                 cmd.Parameters.AddWithValue("@fanotype", cb_fatype.Text)
                 cmd.Parameters.AddWithValue("@section", cb_section.Text)
@@ -268,8 +293,10 @@ Public Class Form1
         LoadData()
 
         datagrid1.ClearSelection()
-        btn_save.Enabled = False
+        btn_edit.Enabled = False
         btn_save.Enabled = True
+        btn_delete.Enabled = False
+        btn_access.Enabled = False
     End Sub
 
 
@@ -381,30 +408,34 @@ Public Class Form1
     Private Sub cmbsearch_TextChanged(sender As Object, e As EventArgs) Handles cmbsearch.TextChanged
 
         Try
-            con.Close()
-            con.Open()
+            If cmbsearch.Text = "" Then
+                LoadData()
+            Else
 
-            ' Modify the query to search for FA NO
-            Dim cmdSearch As New MySqlCommand("SELECT *
-                                           FROM tblfixedasset 
+
+                con.Close()
+                con.Open()
+
+                ' Modify the query to search for FA NO
+                Dim cmdSearch As New MySqlCommand("Select `ID`,ROW_NUMBER() OVER (ORDER BY ID) As NO, `FULLNAME`,  `FANO`, `FATYPE`, `SECTION`, `ITEMDES`, `Date`, `PONO`, `INVOICE`, `SINO`, `AMOUNT`, `CURRENCY`, `SUPPLIER`, `STATUS`, `REMARK`, `QRCODE` FROM `tblfixedasset` 
                                            WHERE FANO LIKE @searchText", con)
-            cmdSearch.Parameters.AddWithValue("@searchText", "%" & cmbsearch.Text & "%")
+                cmdSearch.Parameters.AddWithValue("@searchText", "%" & cmbsearch.Text & "%")
 
-            Dim da As New MySqlDataAdapter(cmdSearch)
-            Dim dt As New DataTable
-            da.Fill(dt)
-            datagrid1.DataSource = dt
+                Dim da As New MySqlDataAdapter(cmdSearch)
+                Dim dt As New DataTable
+                da.Fill(dt)
+                datagrid1.DataSource = dt
 
-            Dim cmdSearch1 As New MySqlCommand("SELECT *
+                Dim cmdSearch1 As New MySqlCommand("SELECT *
                                              FROM tblservices
                                              WHERE FANO LIKE @searchText", con)
-            cmdSearch1.Parameters.AddWithValue("@searchText", "%" & cmbsearch.Text & "%")
+                cmdSearch1.Parameters.AddWithValue("@searchText", "%" & cmbsearch.Text & "%")
 
-            Dim da1 As New MySqlDataAdapter(cmdSearch1)
-            Dim dt1 As New DataTable
-            da1.Fill(dt1)
-            datagrid2.DataSource = dt1
-
+                Dim da1 As New MySqlDataAdapter(cmdSearch1)
+                Dim dt1 As New DataTable
+                da1.Fill(dt1)
+                datagrid2.DataSource = dt1
+            End If
 
         Catch ex As Exception
             MessageBox.Show(ex.Message)
@@ -412,6 +443,7 @@ Public Class Form1
             con.Close()
             da.Dispose()
             da1.Dispose()
+
         End Try
     End Sub
 
@@ -420,6 +452,7 @@ Public Class Form1
     Private Sub btn_access_Click(sender As Object, e As EventArgs) Handles btn_access.Click
         ' Code to grant access, if any
         accessGranted = True
+        btn_edit.Enabled = False
         EnableInputFields()
         MessageBox.Show("Access granted! You can now add services.")
     End Sub
@@ -429,9 +462,11 @@ Public Class Form1
         If e.RowIndex >= 0 Then
             btn_edit.Enabled = True
             btn_save.Enabled = False
+            btn_delete.Enabled = True
+            btn_access.Enabled = True
             Dim row As DataGridViewRow = datagrid1.Rows(e.RowIndex)
             'txt_user.Text = row.Cells("FULLNAME").Value.ToString()
-            txt_no.Text = row.Cells("NO").Value.ToString()
+
 
             cb_fatype.Text = row.Cells("FATYPE").Value.ToString()
 
@@ -607,7 +642,7 @@ Public Class Form1
             con.Open()
 
 
-            Dim query As String = "SELECT CONCAT(@sectioncode, '-', @ayear, '-', LPAD(IFNULL(COUNT(id), 0) + 1, 5, '0')) AS ID " &
+            Dim query As String = "SELECT CONCAT(@sectioncode, '-', @ayear, '-', LPAD(IFNULL(MAX(id), 0) + 1, 5, '0')) AS ID " &
                       "FROM tblfixedasset WHERE YEAR(date) = @year AND LEFT(`FANO`, LOCATE('-', `FANO`) - 1) = @sectioncode;"
 
 
@@ -654,10 +689,85 @@ Public Class Form1
         txt_fano.Text = String.Empty
         ClearInputFields()
         ClearInputFields1()
+        DisableInputFields()
         LoadData()
+        LoadData1()
         datagrid1.ClearSelection()
         datagrid2.ClearSelection()
         btn_edit.Enabled = False
         btn_save.Enabled = True
+        btn_delete.Enabled = False
+        btn_access.Enabled = False
     End Sub
+
+    'Private Sub btn_delete_Click(sender As Object, e As EventArgs) Handles btn_delete.Click
+    '    txt_fano.Text = String.Empty
+    '    If datagrid1.SelectedRows.Count = 0 Then
+    '        MessageBox.Show("Please select a record to delete.", "Delete", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+    '        Return
+    '    End If
+
+    '    Dim result As DialogResult = MessageBox.Show("Are you sure you want to delete this record?", "Confirm Delete", MessageBoxButtons.YesNo, MessageBoxIcon.Question)
+    '    If result = DialogResult.Yes Then
+    '        Try
+    '            Dim selectedId As String = datagrid1.SelectedRows(0).Cells("ID").Value.ToString() ' Use the actual primary key column name
+    '            con.Open()
+    '            cmd = New MySqlCommand("DELETE FROM tblfixedasset WHERE ID = @id", con)
+    '            cmd.Parameters.AddWithValue("@id", selectedId)
+    '            cmd.ExecuteNonQuery()
+    '            con.Close()
+
+    '            MessageBox.Show("Record deleted successfully.", "Deleted", MessageBoxButtons.OK, MessageBoxIcon.Information)
+    '            LoadData()
+    '            datagrid1.ClearSelection()
+    '            datagrid2.ClearSelection()
+    '            ClearInputFields()
+    '            ClearInputFields1()
+    '            btn_edit.Enabled = False
+    '            btn_save.Enabled = True
+    '        Catch ex As Exception
+    '            MessageBox.Show("Error while deleting: " & ex.Message)
+    '            If con.State = ConnectionState.Open Then con.Close()
+    '        End Try
+    '    End If
+    'End Sub
+    Private Sub btn_delete_Click(sender As Object, e As EventArgs) Handles btn_delete.Click
+        If datagrid1.SelectedRows.Count = 0 Then
+            MessageBox.Show("Please select a record to delete.", "Delete", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+            Return
+        End If
+
+        ' Open confirmation form
+        Dim confirmForm As New delete_confirm()
+        If confirmForm.ShowDialog() = DialogResult.OK Then
+            Dim selectedId As String = datagrid1.SelectedRows(0).Cells("ID").Value.ToString()
+
+            Dim result As DialogResult = MessageBox.Show("Are you sure you want to delete this record?", "Confirm Delete", MessageBoxButtons.YesNo, MessageBoxIcon.Question)
+            If result = DialogResult.Yes Then
+                Try
+                    con.Open()
+                    Using cmd As New MySqlCommand("DELETE FROM tblfixedasset WHERE ID = @id", con)
+                        cmd.Parameters.AddWithValue("@id", selectedId)
+                        cmd.ExecuteNonQuery()
+                    End Using
+                    MessageBox.Show("Record deleted successfully.", "Deleted", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                    txt_fano.Text = String.Empty
+                    LoadData()
+                    datagrid1.ClearSelection()
+                    datagrid2.ClearSelection()
+                    ClearInputFields()
+                    ClearInputFields1()
+                    btn_edit.Enabled = False
+                    btn_save.Enabled = True
+                    btn_delete.Enabled = False
+                    btn_access.Enabled = False
+                Catch ex As Exception
+                    MessageBox.Show("Error while deleting: " & ex.Message)
+                Finally
+                    If con.State = ConnectionState.Open Then con.Close()
+                End Try
+            End If
+        End If
+    End Sub
+
 End Class

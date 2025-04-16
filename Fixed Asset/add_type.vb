@@ -16,4 +16,8 @@ Public Class add_type
             MessageBox.Show(ex.Message)
         End Try
     End Sub
+
+    Private Sub Guna2ControlBox1_Click(sender As Object, e As EventArgs) Handles Guna2ControlBox1.Click
+
+    End Sub
 End Class

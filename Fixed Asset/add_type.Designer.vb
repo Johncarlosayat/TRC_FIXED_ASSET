@@ -66,7 +66,6 @@ Partial Class add_type
         Me.txt_supp.HoverState.BorderColor = System.Drawing.Color.FromArgb(CType(CType(94, Byte), Integer), CType(CType(148, Byte), Integer), CType(CType(255, Byte), Integer))
         Me.txt_supp.Location = New System.Drawing.Point(55, 72)
         Me.txt_supp.Name = "txt_supp"
-        Me.txt_supp.PasswordChar = Global.Microsoft.VisualBasic.ChrW(0)
         Me.txt_supp.PlaceholderText = ""
         Me.txt_supp.SelectedText = ""
         Me.txt_supp.Size = New System.Drawing.Size(261, 37)
