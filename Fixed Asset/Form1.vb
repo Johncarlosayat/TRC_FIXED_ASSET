@@ -4,6 +4,7 @@ Imports System.Globalization
 Public Class Form1
     Dim secno As Integer
     Public qrcode As String
+    Public related As Integer
     Public dataid As Integer = 0
     Dim sectionCode As String
     Dim serialcode As Integer
@@ -17,7 +18,9 @@ Public Class Form1
         cb_status.Text = "Active"
         btn_edit.Enabled = False
         btn_delete.Enabled = False
+        btn_print.Enabled = False
         btn_access.Enabled = False
+        btnaddservice.Enabled = False
         dt_date.Value = Date.Now
         dt_date.Enabled = True
     End Sub
@@ -28,20 +31,36 @@ Public Class Form1
         If Not ValidateFields() Then Return
 
         Try
-
             OpenConnection()
+
+            ' Get count of related services for this FANO
+            Dim relatedServiceCount As Integer = 0
+            Using serviceCountCmd As New MySqlCommand("SELECT COUNT(*) FROM tblservices WHERE FANO = @fano", con)
+                serviceCountCmd.Parameters.AddWithValue("@fano", txt_fano.Text)
+                relatedServiceCount = Convert.ToInt32(serviceCountCmd.ExecuteScalar())
+            End Using
+
+            ' Insert record into tblfixedasset including NO_OF_RELATED_SERVICES
             cmd.Connection = con
-            cmd.CommandText = "INSERT INTO tblfixedasset (FULLNAME, FANO, FATYPE, serial, SECTION, ITEMDES, DATE, PONO, INVOICE, SINO, AMOUNT,CURRENCY, SUPPLIER, STATUS, REMARK, QRCODE) 
-                                VALUES (@fullname, @fano, @fanotype, @SERIAL, @section, @itemdes, @date, @pono, @invoice, @sino, @amount,@currency, @supplier, @status, @remark, @qrcode)"
+            cmd.CommandText = "INSERT INTO tblfixedasset (
+                                FULLNAME, FANO, FATYPE, serial, SECTION, ITEMDES, DATE, MAKER, MACHINE, MODEL, 
+                                PONO, INVOICE, SINO, AMOUNT, CURRENCY, SUPPLIER, STATUS, REMARK, QRCODE, NO_OF_RELATED_SERVICES
+                            ) 
+                            VALUES (
+                                @fullname, @fano, @fanotype, @SERIAL, @section, @itemdes, @date, @maker, @machine, @model, 
+                                @pono, @invoice, @sino, @amount, @currency, @supplier, @status, @remark, @qrcode, @related
+                            )"
             cmd.Parameters.Clear()
             cmd.Parameters.AddWithValue("@fullname", txt_user.Text)
-
             cmd.Parameters.AddWithValue("@fano", txt_fano.Text)
             cmd.Parameters.AddWithValue("@fanotype", cb_fatype.Text)
             cmd.Parameters.AddWithValue("@SERIAL", serialcode)
             cmd.Parameters.AddWithValue("@section", cb_section.Text)
             cmd.Parameters.AddWithValue("@itemdes", txt_itemdes.Text)
             cmd.Parameters.AddWithValue("@date", dt_date.Value.ToString("yyyy-MM-dd"))
+            cmd.Parameters.AddWithValue("@maker", cb_maker.Text)
+            cmd.Parameters.AddWithValue("@machine", cb_machine.Text)
+            cmd.Parameters.AddWithValue("@model", cb_model.Text)
             cmd.Parameters.AddWithValue("@pono", txt_pono.Text)
             cmd.Parameters.AddWithValue("@invoice", txt_invoice.Text)
             cmd.Parameters.AddWithValue("@sino", txt_sino.Text)
@@ -50,7 +69,8 @@ Public Class Form1
             cmd.Parameters.AddWithValue("@supplier", cb_supplier.Text)
             cmd.Parameters.AddWithValue("@status", cb_status.Text)
             cmd.Parameters.AddWithValue("@remark", txt_remark.Text)
-            cmd.Parameters.AddWithValue("@qrcode", txt_fano.Text & "|" & cb_fatype.Text & "|" & dt_date.Value.ToString("yyyy-MM-dd"))
+            cmd.Parameters.AddWithValue("@qrcode", $"{txt_fano.Text}|{cb_fatype.Text}|{dt_date.Value:yyyy-MM-dd}")
+            cmd.Parameters.AddWithValue("@related", relatedServiceCount)
 
             cmd.ExecuteNonQuery()
 
@@ -76,6 +96,7 @@ Public Class Form1
             CloseConnection()
         End Try
     End Sub
+
     Public Sub SetFullname(ByVal fullname As String)
         txt_user.Text = fullname
     End Sub
@@ -85,6 +106,9 @@ Public Class Form1
            cb_section.SelectedIndex = -1 Or
            cb_status.SelectedIndex = -1 Or
            boxc.SelectedIndex = -1 Or
+            cb_maker.SelectedIndex = -1 Or
+            cb_machine.SelectedIndex = -1 Or
+            cb_model.SelectedIndex = -1 Or
            String.IsNullOrWhiteSpace(txt_itemdes.Text) Or
            String.IsNullOrWhiteSpace(txt_pono.Text) Or
            String.IsNullOrWhiteSpace(txt_invoice.Text) Or
@@ -98,37 +122,67 @@ Public Class Form1
     End Function
 
     Private Sub btnaddservice_Click(sender As Object, e As EventArgs) Handles btnaddservice.Click
-
         ' Check if access is granted
         If Not accessGranted Then
             MessageBox.Show("Please click the 'Access' button first.")
             Return
         End If
-        If cb_servicepro.SelectedIndex = -1 Or
-           String.IsNullOrWhiteSpace(txt_amount1.Text) Or
-           String.IsNullOrWhiteSpace(txt_sino1.Text) Then
+
+        ' Validate required fields
+        If cb_servicepro.SelectedIndex = -1 OrElse
+       String.IsNullOrWhiteSpace(txt_amount1.Text) OrElse
+       String.IsNullOrWhiteSpace(txt_sino1.Text) Then
             MessageBox.Show("Please fill in all required fields.")
             Return
         End If
 
         Try
             OpenConnection()
-            cmd.Connection = con
-            cmd.CommandText = "INSERT INTO tblservices(FANO,SERVICEPRO, ACCDATE, PODATE,CURRENCY, AMOUNT, SINO, REMARKS) VALUES (@fano, @servicepro, @accdate, @po, @currency,@amount, @sino, @rema)"
 
+            ' Check existing service count
+            Dim count As Integer
+            Using checkCmd As New MySqlCommand("SELECT COUNT(*) FROM tblservices WHERE FANO = @fano", con)
+                checkCmd.Parameters.AddWithValue("@fano", txt_fano.Text)
+                count = Convert.ToInt32(checkCmd.ExecuteScalar())
+            End Using
 
-            cmd.Parameters.Clear()
-            cmd.Parameters.AddWithValue("@fano", txt_fano.Text)
-            cmd.Parameters.AddWithValue("@servicepro", cb_servicepro.Text)
-            cmd.Parameters.AddWithValue("@accdate", dt_accomdate.Value.ToString("yyyy-MM-dd"))
-            cmd.Parameters.AddWithValue("@po", txtpo.Text)
-            cmd.Parameters.AddWithValue("@currency", boxc1.Text)
-            cmd.Parameters.AddWithValue("@amount", txt_amount1.Text)
-            cmd.Parameters.AddWithValue("@sino", txt_sino1.Text)
-            cmd.Parameters.AddWithValue("@rema", txtrema.Text)
-            cmd.ExecuteNonQuery()
+            If count >= 3 Then
+                MessageBox.Show("Maximum of 3 related services allowed for this FA No.")
+                Return
+            End If
 
-            MessageBox.Show("Record added successfully!")
+            ' Insert new service record
+            Using insertCmd As New MySqlCommand("
+            INSERT INTO tblservices (FANO, SERVICEPRO, ACCDATE, PODATE, CURRENCY, AMOUNT, SINO, REMARKS)
+            VALUES (@fano, @servicepro, @accdate, @po, @currency, @amount, @sino, @rema)", con)
+
+                insertCmd.Parameters.AddWithValue("@fano", txt_fano.Text)
+                insertCmd.Parameters.AddWithValue("@servicepro", cb_servicepro.Text)
+                insertCmd.Parameters.AddWithValue("@accdate", dt_accomdate.Value.ToString("yyyy-MM-dd"))
+                insertCmd.Parameters.AddWithValue("@po", txtpo.Text)
+                insertCmd.Parameters.AddWithValue("@currency", boxc1.Text)
+                insertCmd.Parameters.AddWithValue("@amount", txt_amount1.Text)
+                insertCmd.Parameters.AddWithValue("@sino", txt_sino1.Text)
+                insertCmd.Parameters.AddWithValue("@rema", txtrema.Text)
+
+                insertCmd.ExecuteNonQuery()
+            End Using
+
+            ' Update NO_OF_RELATED_SERVICES in tblfixedasset
+            Using updateCmd As New MySqlCommand("
+            UPDATE tblfixedasset
+            SET NO_OF_RELATED_SERVICES = (
+                SELECT COUNT(*) FROM tblservices WHERE FANO = @fano
+            )
+            WHERE FANO = @fano", con)
+
+                updateCmd.Parameters.AddWithValue("@fano", txt_fano.Text)
+                updateCmd.ExecuteNonQuery()
+            End Using
+
+            MessageBox.Show("Service record added successfully!")
+
+            ' Reset UI and reload
             txt_fano.Text = String.Empty
             ClearInputFields()
             ClearInputFields1()
@@ -140,15 +194,18 @@ Public Class Form1
             btn_access.Enabled = False
             btn_save.Enabled = True
             btn_delete.Enabled = False
+            btn_print.Enabled = False
             btn_edit.Enabled = False
             dt_date.Enabled = True
+
         Catch ex As Exception
             MessageBox.Show("Error adding record: " & ex.Message)
         Finally
-
             CloseConnection()
         End Try
+        btnaddservice.Enabled = False
     End Sub
+
     Private Sub ClearInputFields()
 
         txt_fano.Clear()
@@ -156,6 +213,9 @@ Public Class Form1
         cb_section.SelectedIndex = -1
         txt_itemdes.Clear()
         dt_date.Value = DateTime.Now
+        cb_maker.SelectedIndex = -1
+        cb_machine.SelectedIndex = -1
+        cb_model.SelectedIndex = -1
         txt_pono.Clear()
         txt_invoice.Clear()
         txt_sino.Clear()
@@ -202,7 +262,7 @@ Public Class Form1
             CloseConnection()
             OpenConnection()
             dt.Clear()
-            Dim query As String = "Select `ID`,ROW_NUMBER() OVER (ORDER BY ID) As NO, `FULLNAME`,  `FANO`, `FATYPE`, `SECTION`, `ITEMDES`, `Date`, `PONO`, `INVOICE`, `SINO`, `AMOUNT`, `CURRENCY`, `SUPPLIER`, `STATUS`, `REMARK`, `QRCODE` FROM `tblfixedasset` "
+            Dim query As String = "Select `ID`,ROW_NUMBER() OVER (ORDER BY ID) AS NO, `FULLNAME`, `FANO`, `FATYPE`, `SECTION`, `ITEMDES`, `DATE`, `MAKER`, `MACHINE`, `MODEL`, `PONO`, `INVOICE`, `SINO`, `AMOUNT`, `CURRENCY`, `SUPPLIER`, `STATUS`, `REMARK`, `QRCODE`, `NO_OF_RELATED_SERVICES` FROM `tblfixedasset`"
 
 
             da = New MySqlDataAdapter(query, con)
@@ -247,22 +307,56 @@ Public Class Form1
         Dim selectedRow As DataGridViewRow = datagrid1.SelectedRows(0)
         Dim id As Integer = Convert.ToInt32(selectedRow.Cells("id").Value)
 
-        ' Using transactionConnection As New MySqlConnection("server=localhost;port=3306;username=root;password=;database=trcdatabase")
         Try
             con.Close()
             con.Open()
 
-            Using cmd As New MySqlCommand("UPDATE tblfixedasset SET FULLNAME=@fullname, FANO=@fano, FATYPE=@fanotype, SECTION=@section, ITEMDES=@itemdes, DATE=@date, PONO=@pono, INVOICE=@invoice, SINO=@sino, AMOUNT=@amount, CURRENCY=@currency, SUPPLIER=@supplier, STATUS=@status, REMARK=@remark WHERE id=@id", con)
+            ' Get the current FANO
+            Dim fano As String = txt_fano.Text
+
+            ' Get related service count
+            Dim relatedServiceCount As Integer = 0
+            Using countCmd As New MySqlCommand("SELECT COUNT(*) FROM tblservices WHERE FANO = @fano", con)
+                countCmd.Parameters.AddWithValue("@fano", fano)
+                relatedServiceCount = Convert.ToInt32(countCmd.ExecuteScalar())
+            End Using
+
+            ' Update the fixed asset record
+            Using cmd As New MySqlCommand("
+            UPDATE tblfixedasset 
+            SET 
+                FULLNAME = @fullname,
+                FANO = @fano,
+                FATYPE = @fanotype,
+                SECTION = @section,
+                ITEMDES = @itemdes,
+                DATE = @date,
+                MAKER = @maker,
+                MACHINE = @machine,
+                MODEL = @model,
+                PONO = @pono,
+                INVOICE = @invoice,
+                SINO = @sino,
+                AMOUNT = @amount,
+                CURRENCY = @currency,
+                SUPPLIER = @supplier,
+                STATUS = @status,
+                REMARK = @remark,
+                QRCODE = @qrcode,
+                NO_OF_RELATED_SERVICES = @related
+            WHERE id = @id", con)
+
                 cmd.Parameters.Clear()
                 cmd.Parameters.AddWithValue("@id", id)
                 cmd.Parameters.AddWithValue("@fullname", txt_user.Text)
-
-
+                cmd.Parameters.AddWithValue("@fano", fano)
                 cmd.Parameters.AddWithValue("@fanotype", cb_fatype.Text)
                 cmd.Parameters.AddWithValue("@section", cb_section.Text)
                 cmd.Parameters.AddWithValue("@itemdes", txt_itemdes.Text)
                 cmd.Parameters.AddWithValue("@date", dt_date.Value.ToString("yyyy-MM-dd"))
-
+                cmd.Parameters.AddWithValue("@maker", cb_maker.Text)
+                cmd.Parameters.AddWithValue("@machine", cb_machine.Text)
+                cmd.Parameters.AddWithValue("@model", cb_model.Text)
                 cmd.Parameters.AddWithValue("@pono", txt_pono.Text)
                 cmd.Parameters.AddWithValue("@invoice", txt_invoice.Text)
                 cmd.Parameters.AddWithValue("@sino", txt_sino.Text)
@@ -271,17 +365,22 @@ Public Class Form1
                 cmd.Parameters.AddWithValue("@supplier", cb_supplier.Text)
                 cmd.Parameters.AddWithValue("@status", cb_status.Text)
                 cmd.Parameters.AddWithValue("@remark", txt_remark.Text)
-                cmd.Parameters.AddWithValue("@fano", txt_fano.Text)
+                cmd.Parameters.AddWithValue("@qrcode", fano & "|" & cb_fatype.Text & "|" & dt_date.Value.ToString("yyyy-MM-dd"))
+                cmd.Parameters.AddWithValue("@related", relatedServiceCount)
+
                 cmd.ExecuteNonQuery()
             End Using
+
+            MessageBox.Show("Record updated successfully!")
+
         Catch ex As Exception
             MessageBox.Show("Error updating record: " & ex.Message)
         Finally
             txt_fano.Text = String.Empty
             con.Close()
         End Try
-
     End Sub
+
 
     Private Sub btn_edit_Click(sender As Object, e As EventArgs) Handles btn_edit.Click
         UpdateRecordWithTransaction()
@@ -292,7 +391,9 @@ Public Class Form1
         btn_edit.Enabled = False
         btn_save.Enabled = True
         btn_delete.Enabled = False
+        btn_print.Enabled = False
         btn_access.Enabled = False
+        btnaddservice.Enabled = False
         dt_date.Enabled = True
     End Sub
 
@@ -321,7 +422,9 @@ Public Class Form1
             cmb_display("SELECT DISTINCT(selection) FROM cbmasterlist WHERE destination='Supplier'", "selection", cb_supplier)
             cmb_display("SELECT DISTINCT(selection) FROM cbmasterlist WHERE destination='FA Type'", "selection", cb_fatype)
             cmb_display("SELECT DISTINCT(selection) FROM cbmasterlist WHERE destination='Service Provider'", "selection", cb_servicepro)
-
+            cmb_display("SELECT DISTINCT(selection) FROM cbmasterlist WHERE destination='Maker'", "selection", cb_maker)
+            cmb_display("SELECT DISTINCT(selection) FROM cbmasterlist WHERE destination='Machine Type'", "selection", cb_machine)
+            cmb_display("SELECT DISTINCT(selection) FROM cbmasterlist WHERE destination='Model'", "selection", cb_model)
 
 
 
@@ -403,46 +506,67 @@ Public Class Form1
     End Sub
 
     Private Sub cmbsearch_TextChanged(sender As Object, e As EventArgs) Handles cmbsearch.TextChanged
+        Dim da As MySqlDataAdapter = Nothing
+        Dim da1 As MySqlDataAdapter = Nothing
 
         Try
             If cmbsearch.Text = "" Then
                 LoadData()
             Else
-
-
                 con.Close()
                 con.Open()
 
-                ' Modify the query to search for FA NO
-                Dim cmdSearch As New MySqlCommand("Select `ID`,ROW_NUMBER() OVER (ORDER BY ID) As NO, `FULLNAME`,  `FANO`, `FATYPE`, `SECTION`, `ITEMDES`, `Date`, `PONO`, `INVOICE`, `SINO`, `AMOUNT`, `CURRENCY`, `SUPPLIER`, `STATUS`, `REMARK`, `QRCODE` FROM `tblfixedasset` 
-                                           WHERE FANO LIKE @searchText", con)
+                ' Search in tblfixedasset by FANO, ITEMDES, or QRCODE
+                Dim cmdSearch As New MySqlCommand("
+                SELECT `ID`, ROW_NUMBER() OVER (ORDER BY ID) AS NO, `FULLNAME`, `FANO`, `FATYPE`, `SECTION`, 
+                       `ITEMDES`, `DATE`, `MAKER`, `MACHINE`, `MODEL`, `PONO`, `INVOICE`, `SINO`, 
+                       `AMOUNT`, `CURRENCY`, `SUPPLIER`, `STATUS`, `REMARK`, `QRCODE`, `NO_OF_RELATED_SERVICES`
+                FROM `tblfixedasset` 
+                WHERE FANO LIKE @searchText OR ITEMDES LIKE @searchText OR QRCODE LIKE @searchText", con)
                 cmdSearch.Parameters.AddWithValue("@searchText", "%" & cmbsearch.Text & "%")
 
-                Dim da As New MySqlDataAdapter(cmdSearch)
                 Dim dt As New DataTable
+                da = New MySqlDataAdapter(cmdSearch)
                 da.Fill(dt)
                 datagrid1.DataSource = dt
 
-                Dim cmdSearch1 As New MySqlCommand("SELECT *
-                                             FROM tblservices
-                                             WHERE FANO LIKE @searchText", con)
-                cmdSearch1.Parameters.AddWithValue("@searchText", "%" & cmbsearch.Text & "%")
+                ' Collect matching FANOs
+                Dim matchingFANOs As New List(Of String)
+                For Each row As DataRow In dt.Rows
+                    matchingFANOs.Add(row("FANO").ToString())
+                Next
 
-                Dim da1 As New MySqlDataAdapter(cmdSearch1)
+                ' Search related records in tblservices
                 Dim dt1 As New DataTable
-                da1.Fill(dt1)
+                If matchingFANOs.Count > 0 Then
+                    Dim paramNames As New List(Of String)
+                    Dim cmdSearch1 As New MySqlCommand()
+                    cmdSearch1.Connection = con
+
+                    For i As Integer = 0 To matchingFANOs.Count - 1
+                        Dim paramName As String = "@fano" & i
+                        cmdSearch1.Parameters.AddWithValue(paramName, matchingFANOs(i))
+                        paramNames.Add(paramName)
+                    Next
+
+                    cmdSearch1.CommandText = "SELECT * FROM tblservices WHERE FANO IN (" & String.Join(",", paramNames) & ")"
+                    da1 = New MySqlDataAdapter(cmdSearch1)
+                    da1.Fill(dt1)
+                End If
+
                 datagrid2.DataSource = dt1
             End If
 
         Catch ex As Exception
-            MessageBox.Show(ex.Message)
+            MessageBox.Show("Search error: " & ex.Message)
         Finally
             con.Close()
-            da.Dispose()
-            da1.Dispose()
-
+            If da IsNot Nothing Then da.Dispose()
+            If da1 IsNot Nothing Then da1.Dispose()
         End Try
     End Sub
+
+
 
     Private accessGranted As Boolean = False
 
@@ -450,8 +574,12 @@ Public Class Form1
         ' Code to grant access, if any
         accessGranted = True
         btn_edit.Enabled = False
+        btn_print.Enabled = False
+        btn_delete.Enabled = False
+
         EnableInputFields()
         MessageBox.Show("Access granted! You can now add services.")
+        btn_access.Enabled = False
     End Sub
 
 
@@ -460,7 +588,9 @@ Public Class Form1
             btn_edit.Enabled = True
             btn_save.Enabled = False
             btn_delete.Enabled = True
+            btn_print.Enabled = True
             btn_access.Enabled = True
+            btnaddservice.Enabled = True
             dt_date.Enabled = False
             Dim row As DataGridViewRow = datagrid1.Rows(e.RowIndex)
             'txt_user.Text = row.Cells("FULLNAME").Value.ToString()
@@ -491,6 +621,9 @@ Public Class Form1
 
             txt_itemdes.Text = row.Cells("ITEMDES").Value.ToString()
             dt_date.Value = Convert.ToDateTime(row.Cells("DATE").Value)
+            cb_maker.Text = row.Cells("MAKER").Value.ToString()
+            cb_machine.Text = row.Cells("MACHINE").Value.ToString()
+            cb_model.Text = row.Cells("MODEL").Value.ToString()
             txt_fano.Text = row.Cells("FANO").Value.ToString()
             txt_pono.Text = row.Cells("PONO").Value.ToString()
             txt_invoice.Text = row.Cells("INVOICE").Value.ToString()
@@ -501,6 +634,7 @@ Public Class Form1
             cb_status.Text = row.Cells("STATUS").Value.ToString()
             txt_remark.Text = row.Cells("REMARK").Value.ToString()
             qrcode = row.Cells("QRCODE").Value.ToString()
+            related = row.Cells("NO_OF_RELATED_SERVICES").Value.ToString()
             dataid = row.Cells("id").Value.ToString()
         End If
     End Sub
@@ -732,7 +866,9 @@ Where Year(`date`) = @year
         btn_edit.Enabled = False
         btn_save.Enabled = True
         btn_delete.Enabled = False
+        btn_print.Enabled = False
         btn_access.Enabled = False
+        btnaddservice.Enabled = False
         dt_date.Enabled = True
     End Sub
 
@@ -773,22 +909,36 @@ Where Year(`date`) = @year
             Return
         End If
 
-        ' Open confirmation form
+        ' Show confirmation form
         Dim confirmForm As New delete_confirm()
         If confirmForm.ShowDialog() = DialogResult.OK Then
-            Dim selectedId As String = datagrid1.SelectedRows(0).Cells("ID").Value.ToString()
+            Dim selectedRow As DataGridViewRow = datagrid1.SelectedRows(0)
+            Dim selectedId As String = selectedRow.Cells("ID").Value.ToString()
+            Dim fanoToDelete As String = selectedRow.Cells("FANO").Value.ToString()
 
             Dim result As DialogResult = MessageBox.Show("Are you sure you want to delete this record?", "Confirm Delete", MessageBoxButtons.YesNo, MessageBoxIcon.Question)
             If result = DialogResult.Yes Then
                 Try
                     con.Open()
-                    Using cmd As New MySqlCommand("DELETE FROM tblfixedasset WHERE ID = @id", con)
-                        cmd.Parameters.AddWithValue("@id", selectedId)
-                        cmd.ExecuteNonQuery()
+
+                    ' First delete related services from tblservices
+                    Using deleteServicesCmd As New MySqlCommand("DELETE FROM tblservices WHERE FANO = @fano", con)
+                        deleteServicesCmd.Parameters.AddWithValue("@fano", fanoToDelete)
+                        deleteServicesCmd.ExecuteNonQuery()
                     End Using
-                    MessageBox.Show("Record deleted successfully.", "Deleted", MessageBoxButtons.OK, MessageBoxIcon.Information)
+
+                    ' Then delete the main record from tblfixedasset
+                    Using deleteAssetCmd As New MySqlCommand("DELETE FROM tblfixedasset WHERE ID = @id", con)
+                        deleteAssetCmd.Parameters.AddWithValue("@id", selectedId)
+                        deleteAssetCmd.ExecuteNonQuery()
+                    End Using
+
+                    MessageBox.Show("Record and related services deleted successfully.", "Deleted", MessageBoxButtons.OK, MessageBoxIcon.Information)
+
+                    ' Reset UI
                     txt_fano.Text = String.Empty
                     LoadData()
+                    LoadData1()
                     datagrid1.ClearSelection()
                     datagrid2.ClearSelection()
                     ClearInputFields()
@@ -797,7 +947,9 @@ Where Year(`date`) = @year
                     btn_save.Enabled = True
                     btn_delete.Enabled = False
                     btn_access.Enabled = False
+                    btnaddservice.Enabled = False
                     dt_date.Enabled = True
+
                 Catch ex As Exception
                     MessageBox.Show("Error while deleting: " & ex.Message)
                 Finally
@@ -806,5 +958,26 @@ Where Year(`date`) = @year
             End If
         End If
     End Sub
+
+
+    Private Sub Guna2Button4_Click(sender As Object, e As EventArgs) Handles Guna2Button4.Click
+        exportExcel(datagrid1, "Fixed asset")
+    End Sub
+
+    Private Sub Guna2Button5_Click(sender As Object, e As EventArgs) Handles Guna2Button5.Click
+        add_maker.ShowDialog()
+        add_maker.BringToFront()
+    End Sub
+
+    Private Sub Guna2Button6_Click(sender As Object, e As EventArgs) Handles Guna2Button6.Click
+        add_machine.ShowDialog()
+        add_machine.BringToFront()
+    End Sub
+
+    Private Sub Guna2Button7_Click(sender As Object, e As EventArgs) Handles Guna2Button7.Click
+        add_model.ShowDialog()
+        add_model.BringToFront()
+    End Sub
+
 
 End Class

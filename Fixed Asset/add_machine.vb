@@ -1,11 +1,11 @@
 ﻿Imports MySql.Data.MySqlClient
-Public Class add_provider
+Public Class add_machine
     Private Sub Guna2Button1_Click(sender As Object, e As EventArgs) Handles Guna2Button1.Click
         Try
             con.Close()
             con.Open()
             Dim addsupplier As New MySqlCommand("INSERT INTO cbmasterlist (selection,destination) 
-                                VALUES ('" & txt_supp.Text & "', 'Service Provider')", con)
+                                VALUES ('" & txt_supp.Text & "', 'Machine Type')", con)
             addsupplier.ExecuteNonQuery()
 
             Form1.LoadComboBoxData()
@@ -17,4 +17,6 @@ Public Class add_provider
         End Try
         txt_supp.Clear()
     End Sub
+
+
 End Class
