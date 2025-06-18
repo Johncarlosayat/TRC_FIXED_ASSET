@@ -585,6 +585,7 @@ Public Class Form1
 
     Private Sub datagrid1_CellClick(sender As Object, e As DataGridViewCellEventArgs) Handles datagrid1.CellClick
         If e.RowIndex >= 0 Then
+            ClearInputFields()
             btn_edit.Enabled = True
             btn_save.Enabled = False
             btn_delete.Enabled = True
