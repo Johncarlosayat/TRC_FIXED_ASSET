@@ -564,6 +564,7 @@ Public Class Form1
             If da IsNot Nothing Then da.Dispose()
             If da1 IsNot Nothing Then da1.Dispose()
         End Try
+
     End Sub
 
 
@@ -749,7 +750,7 @@ Public Class Form1
             '  txt_fano.Text = sechar & "-" & dt_date.Value.ToString("yyyy") & "-" & secno.ToString("00000")
 
 
-            txt_fano.Text = getFAno(dt_date.Value.ToString("yyyy"), sectionCode)
+            txt_fano.Text = getFAno(dt_date.Value.ToString("MMyyyy"), sectionCode)
 
             '' Close the reader before updating the database
             'dr.Close()
@@ -805,23 +806,23 @@ Public Class Form1
             con.Close()
             con.Open()
 
+            Dim onlyYear As String = ayear.Substring(2, 4) ' Get yyyy part from MMyyyy
             Dim query As String = "SELECT 
   CONCAT(@sectioncode, '-', @ayear, '-', LPAD(IFNULL(MAX(serial), 0) + 1, 5, '0')) AS ID,
   (IFNULL(MAX(serial), 0) + 1) AS serial
-From tblfixedasset
-Where Year(`date`) = @year 
-  And LEFT(`FANO`, LOCATE('-', `FANO`) - 1) = @sectioncode;"
-
+FROM tblfixedasset
+WHERE YEAR(`date`) = @year 
+  AND LEFT(`FANO`, LOCATE('-', `FANO`) - 1) = @sectioncode;"
 
             Using cmd As New MySqlCommand(query, con)
+                ' Force ayear into MMyyyy format even if passed as yyyy
                 cmd.Parameters.AddWithValue("@sectioncode", sectioncode)
-                cmd.Parameters.AddWithValue("@ayear", ayear)
-                cmd.Parameters.AddWithValue("@year", ayear)
+                cmd.Parameters.AddWithValue("@ayear", ayear) ' Full MMyyyy format
+                cmd.Parameters.AddWithValue("@year", onlyYear)  'For filtering by year only
 
                 dr = cmd.ExecuteReader()
                 If dr.Read() Then
                     serialcode = dr.GetInt32("serial")
-                    ' MessageBox.Show(serialcode)
                     Return dr("ID").ToString()
                 End If
             End Using
