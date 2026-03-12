@@ -13,6 +13,7 @@ Public Class print_sticker
     Public pono As String
     Public sino As String
     Public qrcode As String
+    Public _property As String
     Private Sub print_sticker_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         loadrpt()
     End Sub
@@ -24,7 +25,7 @@ Public Class print_sticker
 
             ' Generate and store QR code
             Dim qrImageBytes As Byte() = GenerateQRCodeBytes(qrcode)
-            dt_records.Rows.Add(fano, fatype, section, date_ac, pono, sino, qrImageBytes)
+            dt_records.Rows.Add(fano, fatype, section, date_ac, pono, sino, qrImageBytes, _property)
 
             BindReportToViewer()
         Catch ex As Exception
@@ -40,6 +41,7 @@ Public Class print_sticker
         dt_records.Columns.Add("PONO", GetType(String))
         dt_records.Columns.Add("SINO", GetType(String))
         dt_records.Columns.Add("qrcode", GetType(Byte()))
+        dt_records.Columns.Add("_property", GetType(String))
     End Sub
 
     Private Function GenerateQRCodeBytes(serial As String) As Byte()

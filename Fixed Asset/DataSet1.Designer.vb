@@ -297,6 +297,8 @@ Partial Public Class DataSet1
         
         Private columnQRCODE As Global.System.Data.DataColumn
         
+        Private column_PROPERTY As Global.System.Data.DataColumn
+        
         <Global.System.Diagnostics.DebuggerNonUserCodeAttribute(),  _
          Global.System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "16.0.0.0")>  _
         Public Sub New()
@@ -389,6 +391,14 @@ Partial Public Class DataSet1
         End Property
         
         <Global.System.Diagnostics.DebuggerNonUserCodeAttribute(),  _
+         Global.System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "16.0.0.0")>  _
+        Public ReadOnly Property _PROPERTYColumn() As Global.System.Data.DataColumn
+            Get
+                Return Me.column_PROPERTY
+            End Get
+        End Property
+        
+        <Global.System.Diagnostics.DebuggerNonUserCodeAttribute(),  _
          Global.System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "16.0.0.0"),  _
          Global.System.ComponentModel.Browsable(false)>  _
         Public ReadOnly Property Count() As Integer
@@ -425,9 +435,9 @@ Partial Public Class DataSet1
         
         <Global.System.Diagnostics.DebuggerNonUserCodeAttribute(),  _
          Global.System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "16.0.0.0")>  _
-        Public Overloads Function AddtblfixedassetRow(ByVal FANO As String, ByVal FATYPE As String, ByVal SECTION As String, ByVal _DATE As Date, ByVal PONO As String, ByVal SINO As String, ByVal QRCODE() As Byte) As tblfixedassetRow
+        Public Overloads Function AddtblfixedassetRow(ByVal FANO As String, ByVal FATYPE As String, ByVal SECTION As String, ByVal _DATE As Date, ByVal PONO As String, ByVal SINO As String, ByVal QRCODE() As Byte, ByVal _PROPERTY As String) As tblfixedassetRow
             Dim rowtblfixedassetRow As tblfixedassetRow = CType(Me.NewRow,tblfixedassetRow)
-            Dim columnValuesArray() As Object = New Object() {FANO, FATYPE, SECTION, _DATE, PONO, SINO, QRCODE}
+            Dim columnValuesArray() As Object = New Object() {FANO, FATYPE, SECTION, _DATE, PONO, SINO, QRCODE, _PROPERTY}
             rowtblfixedassetRow.ItemArray = columnValuesArray
             Me.Rows.Add(rowtblfixedassetRow)
             Return rowtblfixedassetRow
@@ -457,6 +467,7 @@ Partial Public Class DataSet1
             Me.columnPONO = MyBase.Columns("PONO")
             Me.columnSINO = MyBase.Columns("SINO")
             Me.columnQRCODE = MyBase.Columns("QRCODE")
+            Me.column_PROPERTY = MyBase.Columns("_PROPERTY")
         End Sub
         
         <Global.System.Diagnostics.DebuggerNonUserCodeAttribute(),  _
@@ -479,6 +490,8 @@ Partial Public Class DataSet1
             MyBase.Columns.Add(Me.columnSINO)
             Me.columnQRCODE = New Global.System.Data.DataColumn("QRCODE", GetType(Byte()), Nothing, Global.System.Data.MappingType.Element)
             MyBase.Columns.Add(Me.columnQRCODE)
+            Me.column_PROPERTY = New Global.System.Data.DataColumn("_PROPERTY", GetType(String), Nothing, Global.System.Data.MappingType.Element)
+            MyBase.Columns.Add(Me.column_PROPERTY)
         End Sub
         
         <Global.System.Diagnostics.DebuggerNonUserCodeAttribute(),  _
@@ -730,6 +743,21 @@ Partial Public Class DataSet1
         
         <Global.System.Diagnostics.DebuggerNonUserCodeAttribute(),  _
          Global.System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "16.0.0.0")>  _
+        Public Property _PROPERTY() As String
+            Get
+                Try 
+                    Return CType(Me(Me.tabletblfixedasset._PROPERTYColumn),String)
+                Catch e As Global.System.InvalidCastException
+                    Throw New Global.System.Data.StrongTypingException("The value for column '_PROPERTY' in table 'tblfixedasset' is DBNull.", e)
+                End Try
+            End Get
+            Set
+                Me(Me.tabletblfixedasset._PROPERTYColumn) = value
+            End Set
+        End Property
+        
+        <Global.System.Diagnostics.DebuggerNonUserCodeAttribute(),  _
+         Global.System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "16.0.0.0")>  _
         Public Function IsFANONull() As Boolean
             Return Me.IsNull(Me.tabletblfixedasset.FANOColumn)
         End Function
@@ -810,6 +838,18 @@ Partial Public Class DataSet1
          Global.System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "16.0.0.0")>  _
         Public Sub SetQRCODENull()
             Me(Me.tabletblfixedasset.QRCODEColumn) = Global.System.Convert.DBNull
+        End Sub
+        
+        <Global.System.Diagnostics.DebuggerNonUserCodeAttribute(),  _
+         Global.System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "16.0.0.0")>  _
+        Public Function Is_PROPERTYNull() As Boolean
+            Return Me.IsNull(Me.tabletblfixedasset._PROPERTYColumn)
+        End Function
+        
+        <Global.System.Diagnostics.DebuggerNonUserCodeAttribute(),  _
+         Global.System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "16.0.0.0")>  _
+        Public Sub Set_PROPERTYNull()
+            Me(Me.tabletblfixedasset._PROPERTYColumn) = Global.System.Convert.DBNull
         End Sub
     End Class
     

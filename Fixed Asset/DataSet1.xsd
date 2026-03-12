@@ -22,6 +22,7 @@
               <xs:element name="PONO" msprop:Generator_ColumnVarNameInTable="columnPONO" msprop:Generator_ColumnPropNameInRow="PONO" msprop:Generator_ColumnPropNameInTable="PONOColumn" msprop:Generator_UserColumnName="PONO" type="xs:string" minOccurs="0" />
               <xs:element name="SINO" msprop:Generator_ColumnVarNameInTable="columnSINO" msprop:Generator_ColumnPropNameInRow="SINO" msprop:Generator_ColumnPropNameInTable="SINOColumn" msprop:Generator_UserColumnName="SINO" type="xs:string" minOccurs="0" />
               <xs:element name="QRCODE" msprop:Generator_ColumnVarNameInTable="columnQRCODE" msprop:Generator_ColumnPropNameInRow="QRCODE" msprop:Generator_ColumnPropNameInTable="QRCODEColumn" msprop:Generator_UserColumnName="QRCODE" type="xs:base64Binary" minOccurs="0" />
+              <xs:element name="_PROPERTY" msprop:Generator_ColumnVarNameInTable="column_PROPERTY" msprop:Generator_ColumnPropNameInRow="_PROPERTY" msprop:Generator_ColumnPropNameInTable="_PROPERTYColumn" msprop:Generator_UserColumnName="_PROPERTY" type="xs:string" minOccurs="0" />
             </xs:sequence>
           </xs:complexType>
         </xs:element>

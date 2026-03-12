@@ -44,11 +44,11 @@ Public Class Form1
             cmd.Connection = con
             cmd.CommandText = "INSERT INTO tblfixedasset (
                                 FULLNAME, FANO, FATYPE, serial, SECTION, ITEMDES, DATE, MAKER, MACHINE, MODEL, 
-                                PONO, INVOICE, SINO, AMOUNT, CURRENCY, SUPPLIER, STATUS, REMARK, QRCODE, NO_OF_RELATED_SERVICES
+                                PONO, INVOICE, SINO, AMOUNT, CURRENCY, SUPPLIER, STATUS, REMARK, PROPERTY, QRCODE, NO_OF_RELATED_SERVICES
                             ) 
                             VALUES (
                                 @fullname, @fano, @fanotype, @SERIAL, @section, @itemdes, @date, @maker, @machine, @model, 
-                                @pono, @invoice, @sino, @amount, @currency, @supplier, @status, @remark, @qrcode, @related
+                                @pono, @invoice, @sino, @amount, @currency, @supplier, @status, @remark, @property, @qrcode, @related
                             )"
             cmd.Parameters.Clear()
             cmd.Parameters.AddWithValue("@fullname", txt_user.Text)
@@ -69,6 +69,7 @@ Public Class Form1
             cmd.Parameters.AddWithValue("@supplier", cb_supplier.Text)
             cmd.Parameters.AddWithValue("@status", cb_status.Text)
             cmd.Parameters.AddWithValue("@remark", txt_remark.Text)
+            cmd.Parameters.AddWithValue("@property", txt_property.Text)
             cmd.Parameters.AddWithValue("@qrcode", $"{txt_fano.Text}|{cb_fatype.Text}|{dt_date.Value:yyyy-MM-dd}")
             cmd.Parameters.AddWithValue("@related", relatedServiceCount)
 
@@ -223,6 +224,7 @@ Public Class Form1
         txt_amount.Clear()
         cb_supplier.SelectedIndex = -1
         txt_remark.Clear()
+        txt_property.Clear()
     End Sub
     Private Sub ClearInputFields1()
         cb_servicepro.SelectedIndex = -1
@@ -262,7 +264,7 @@ Public Class Form1
             CloseConnection()
             OpenConnection()
             dt.Clear()
-            Dim query As String = "Select `ID`,ROW_NUMBER() OVER (ORDER BY ID) AS NO, `FULLNAME`, `FANO`, `FATYPE`, `SECTION`, `ITEMDES`, `DATE`, `MAKER`, `MACHINE`, `MODEL`, `PONO`, `INVOICE`, `SINO`, `AMOUNT`, `CURRENCY`, `SUPPLIER`, `STATUS`, `REMARK`, `QRCODE`, `NO_OF_RELATED_SERVICES` FROM `tblfixedasset`"
+            Dim query As String = "Select `ID`,ROW_NUMBER() OVER (ORDER BY ID) AS NO, `FULLNAME`, `FANO`, `FATYPE`, `SECTION`, `ITEMDES`, `DATE`, `MAKER`, `MACHINE`, `MODEL`, `PONO`, `INVOICE`, `SINO`, `AMOUNT`, `CURRENCY`, `SUPPLIER`, `STATUS`, `REMARK`, `PROPERTY`, `QRCODE`, `NO_OF_RELATED_SERVICES` FROM `tblfixedasset`"
 
 
             da = New MySqlDataAdapter(query, con)
@@ -342,6 +344,7 @@ Public Class Form1
                 SUPPLIER = @supplier,
                 STATUS = @status,
                 REMARK = @remark,
+                PROPERTY = @property,
                 QRCODE = @qrcode,
                 NO_OF_RELATED_SERVICES = @related
             WHERE id = @id", con)
@@ -365,6 +368,7 @@ Public Class Form1
                 cmd.Parameters.AddWithValue("@supplier", cb_supplier.Text)
                 cmd.Parameters.AddWithValue("@status", cb_status.Text)
                 cmd.Parameters.AddWithValue("@remark", txt_remark.Text)
+                cmd.Parameters.AddWithValue("@property", txt_property.Text)
                 cmd.Parameters.AddWithValue("@qrcode", fano & "|" & cb_fatype.Text & "|" & dt_date.Value.ToString("yyyy-MM-dd"))
                 cmd.Parameters.AddWithValue("@related", relatedServiceCount)
 
@@ -499,6 +503,8 @@ Public Class Form1
                 sectionCode = "RA"
             Case "General"
                 sectionCode = "GA"
+            Case "General (Factory 1)"
+                sectionCode = "GF1"
             Case "Office"
                 sectionCode = "OF"
         End Select
@@ -520,7 +526,7 @@ Public Class Form1
                 Dim cmdSearch As New MySqlCommand("
                 SELECT `ID`, ROW_NUMBER() OVER (ORDER BY ID) AS NO, `FULLNAME`, `FANO`, `FATYPE`, `SECTION`, 
                        `ITEMDES`, `DATE`, `MAKER`, `MACHINE`, `MODEL`, `PONO`, `INVOICE`, `SINO`, 
-                       `AMOUNT`, `CURRENCY`, `SUPPLIER`, `STATUS`, `REMARK`, `QRCODE`, `NO_OF_RELATED_SERVICES`
+                       `AMOUNT`, `CURRENCY`, `SUPPLIER`, `STATUS`, `REMARK`, `PROPERTY`, `QRCODE`, `NO_OF_RELATED_SERVICES`
                 FROM `tblfixedasset` 
                 WHERE FANO LIKE @searchText OR ITEMDES LIKE @searchText OR QRCODE LIKE @searchText", con)
                 cmdSearch.Parameters.AddWithValue("@searchText", "%" & cmbsearch.Text & "%")
@@ -635,6 +641,7 @@ Public Class Form1
             cb_supplier.Text = row.Cells("SUPPLIER").Value.ToString()
             cb_status.Text = row.Cells("STATUS").Value.ToString()
             txt_remark.Text = row.Cells("REMARK").Value.ToString()
+            txt_property.Text = row.Cells("PROPERTY").Value.ToString()
             qrcode = row.Cells("QRCODE").Value.ToString()
             related = row.Cells("NO_OF_RELATED_SERVICES").Value.ToString()
             dataid = row.Cells("id").Value.ToString()
@@ -654,6 +661,7 @@ Public Class Form1
                 .pono = txt_pono.Text
                 .sino = txt_sino.Text
                 .qrcode = qrcode
+                ._property = txt_property.Text
                 .ShowDialog()
                 .BringToFront()
             End With
@@ -750,7 +758,7 @@ Public Class Form1
             '  txt_fano.Text = sechar & "-" & dt_date.Value.ToString("yyyy") & "-" & secno.ToString("00000")
 
 
-            txt_fano.Text = getFAno(dt_date.Value.ToString("MMyyyy"), sectionCode)
+            txt_fano.Text = getFAno(dt_date.Value.ToString("yyyyMM"), sectionCode)
 
             '' Close the reader before updating the database
             'dr.Close()
@@ -806,7 +814,7 @@ Public Class Form1
             con.Close()
             con.Open()
 
-            Dim onlyYear As String = ayear.Substring(2, 4) ' Get yyyy part from MMyyyy
+            Dim onlyYear As String = ayear.Substring(0, 4) ' Get yyyy part from MMyyyy
             Dim query As String = "SELECT 
   CONCAT(@sectioncode, '-', @ayear, '-', LPAD(IFNULL(MAX(serial), 0) + 1, 5, '0')) AS ID,
   (IFNULL(MAX(serial), 0) + 1) AS serial
